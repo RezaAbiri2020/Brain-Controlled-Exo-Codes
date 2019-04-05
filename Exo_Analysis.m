@@ -22,7 +22,7 @@ close all
 % 3 trials for 90 degree. (toward to body)
 % It seems chs 63, 95, 109 were bad chs.
 
-%% loading and breaking raw ECoG data into trials
+% loading and breaking raw ECoG data into trials
 % first block
 load('..\20190321-113426\20190321-113426-001.mat');
 timestamp_B1=anin;
@@ -109,26 +109,27 @@ FilterBands={
 % Cal ERPs for each band for each angle; for all blocks
 % selecting window for ERP in each band; sample points
 ERPwindowPerBand={
-    [3000, 3000]% delta
+    [500, 1500]% delta
     [1000,1000]% theta
     [500,500]% alpha
     [500,500]% beta
-    [500,500] % gamma 1
-    [500,500]}; % gamma 2;
+    [50,100] % gamma 1
+    [50,100]}; % gamma 2;
 
 %index of timestamps for all blocks
+% E
 threshhold=1000;
 Stim_B1=find(diff(timestamp_B1>threshhold)==1);
-index_StartReaching_B1=Stim_B1(1:2:end);
-index_BackingHome_B1=Stim_B1(2:2:end);
+index_E_B1=Stim_B1(1:2:end);
+index_F_B1=Stim_B1(2:2:end);
 
 Stim_B2=find(diff(timestamp_B2>threshhold)==1);
-index_StartReaching_B2=Stim_B2(1:2:end);
-index_BackingHome_B2=Stim_B2(2:2:end);
+index_E_B2=Stim_B2(1:2:end);
+index_F_B2=Stim_B2(2:2:end);
 
 Stim_B3=find(diff(timestamp_B3>threshhold)==1);
-index_StartReaching_B3=Stim_B3(1:2:end);
-index_BackingHome_B3=Stim_B3(2:2:end);
+index_E_B3=Stim_B3(1:2:end);
+index_F_B3=Stim_B3(2:2:end);
 
 ch_layout = [
     91	84	67	90	70	79	88	69	92	83	65	89	87	86	94	82
@@ -143,279 +144,634 @@ ch_layout = [
 ch_layout=ch_layout';
 ch_layout=ch_layout(:);
 
+ECoG_B1_3=zeros(size(ECoG_B1_2));
+ECoG_B2_3=zeros(size(ECoG_B2_2));
+ECoG_B3_3=zeros(size(ECoG_B3_2));
+
+for i=1:128
+    ECoG_B1_3(:,i)=ECoG_B1_2(:,ch_layout(i));
+    ECoG_B2_3(:,i)=ECoG_B2_2(:,ch_layout(i));
+    ECoG_B3_3(:,i)=ECoG_B3_2(:,ch_layout(i));
+end 
+
+
 bandname={'delta','theta','alpha','beta','gamma1','gamma2'};
 
-for band=1 %:6 % including raw(?!)
+% for colors adjustment in clims
+aclim=-0.4;
+bclim=0.4;
+
+
+
+for band=2 %:6 % including raw(?!)
     
     [b,a]=butter(3,FilterBands{band}/(Fs/2));
-    ECoG_B1_Filtered=filtfilt(b,a,ECoG_B1_2);
-    ECoG_B2_Filtered=filtfilt(b,a,ECoG_B2_2);
-    ECoG_B3_Filtered=filtfilt(b,a,ECoG_B3_2);
+    ECoG_B1_Filtered=filtfilt(b,a,ECoG_B1_3);
+    ECoG_B2_Filtered=filtfilt(b,a,ECoG_B2_3);
+    ECoG_B3_Filtered=filtfilt(b,a,ECoG_B3_3);
     
-%     ECoG_B1_Filtered=abs(hilbert(ECoG_B1_Filtered));
-%     ECoG_B2_Filtered=abs(hilbert(ECoG_B2_Filtered));
-%     ECoG_B3_Filtered=abs(hilbert(ECoG_B3_Filtered));
+    %     ECoG_B1_Filtered=abs(hilbert(ECoG_B1_Filtered));
+    %     ECoG_B2_Filtered=abs(hilbert(ECoG_B2_Filtered));
+    %     ECoG_B3_Filtered=abs(hilbert(ECoG_B3_Filtered));
+    % Generating ERPs for trials in Blocks
     
-    ERP_SRAll_0=zeros(ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)+1,size(ECoG_B1,2));
-    ERP_BHAll_0=zeros(ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)+1,size(ECoG_B1,2));
-    ERP_SRAll_45=zeros(ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)+1,size(ECoG_B1,2));
-    ERP_BHAll_45=zeros(ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)+1,size(ECoG_B1,2));
-    ERP_SRAll_90=zeros(ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)+1,size(ECoG_B1,2));
-    ERP_BHAll_90=zeros(ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)+1,size(ECoG_B1,2));
+    for i=1:3 % for number of extension and flexion
+        % block 1
+        B1(i).E0=ECoG_B1_Filtered(index_E_B1(i)-ERPwindowPerBand{band}(1):index_E_B1(i)+ERPwindowPerBand{band}(2),:);
+        B1(i).E90=ECoG_B1_Filtered(index_E_B1(i+5)-ERPwindowPerBand{band}(1):index_E_B1(i+5)+ERPwindowPerBand{band}(2),:);
+        
+        B1(i).F0=ECoG_B1_Filtered(index_F_B1(i)-ERPwindowPerBand{band}(1):index_F_B1(i)+ERPwindowPerBand{band}(2),:);
+        B1(i).F90=ECoG_B1_Filtered(index_F_B1(i+5)-ERPwindowPerBand{band}(1):index_F_B1(i+5)+ERPwindowPerBand{band}(2),:);
+        
+        %Block 2
+        B2(i).E0=ECoG_B2_Filtered(index_E_B2(i)-ERPwindowPerBand{band}(1):index_E_B2(i)+ERPwindowPerBand{band}(2),:);
+        B2(i).E45=ECoG_B2_Filtered(index_E_B2(i+3)-ERPwindowPerBand{band}(1):index_E_B2(i+3)+ERPwindowPerBand{band}(2),:);
+        B2(i).E90=ECoG_B2_Filtered(index_E_B2(i+6)-ERPwindowPerBand{band}(1):index_E_B2(i+6)+ERPwindowPerBand{band}(2),:);
+        
+        B2(i).F0=ECoG_B2_Filtered(index_F_B2(i)-ERPwindowPerBand{band}(1):index_F_B2(i)+ERPwindowPerBand{band}(2),:);
+        B2(i).F45=ECoG_B2_Filtered(index_F_B2(i+3)-ERPwindowPerBand{band}(1):index_F_B2(i+3)+ERPwindowPerBand{band}(2),:);
+        B2(i).F90=ECoG_B2_Filtered(index_F_B2(i+6)-ERPwindowPerBand{band}(1):index_F_B2(i+6)+ERPwindowPerBand{band}(2),:);
+        
+        %Block 3
+        B3(i).E0=ECoG_B3_Filtered(index_E_B3(i)-ERPwindowPerBand{band}(1):index_E_B3(i)+ERPwindowPerBand{band}(2),:);
+        B3(i).E45=ECoG_B3_Filtered(index_E_B3(i+3)-ERPwindowPerBand{band}(1):index_E_B3(i+3)+ERPwindowPerBand{band}(2),:);
+        B3(i).E90=ECoG_B3_Filtered(index_E_B3(i+6)-ERPwindowPerBand{band}(1):index_E_B3(i+6)+ERPwindowPerBand{band}(2),:);
+        
+        B3(i).F0=ECoG_B3_Filtered(index_F_B3(i)-ERPwindowPerBand{band}(1):index_F_B3(i)+ERPwindowPerBand{band}(2),:);
+        B3(i).F45=ECoG_B3_Filtered(index_F_B3(i+3)-ERPwindowPerBand{band}(1):index_F_B3(i+3)+ERPwindowPerBand{band}(2),:);
+        B3(i).F90=ECoG_B3_Filtered(index_F_B3(i+6)-ERPwindowPerBand{band}(1):index_F_B3(i+6)+ERPwindowPerBand{band}(2),:);
+             
+    end
     
-    for trial=1:3
-        idx_SR_B1=index_StartReaching_B1(trial)-ERPwindowPerBand{band}(1):index_StartReaching_B1(trial)+ERPwindowPerBand{band}(2);
-        idx_SR_B2=index_StartReaching_B2(trial)-ERPwindowPerBand{band}(1):index_StartReaching_B2(trial)+ERPwindowPerBand{band}(2);
-        idx_SR_B3=index_StartReaching_B3(trial)-ERPwindowPerBand{band}(1):index_StartReaching_B3(trial)+ERPwindowPerBand{band}(2);
-        ERP_SR_0=ECoG_B1_Filtered(idx_SR_B1,:)+ECoG_B2_Filtered(idx_SR_B2,:)+ECoG_B3_Filtered(idx_SR_B3,:);
-        ERP_SRAll_0=ERP_SRAll_0+ERP_SR_0;
-        
-        idx_BH_B1=index_BackingHome_B1(trial)-ERPwindowPerBand{band}(1):index_BackingHome_B1(trial)+ERPwindowPerBand{band}(2);
-        idx_BH_B2=index_BackingHome_B2(trial)-ERPwindowPerBand{band}(1):index_BackingHome_B2(trial)+ERPwindowPerBand{band}(2);
-        idx_BH_B3=index_BackingHome_B3(trial)-ERPwindowPerBand{band}(1):index_BackingHome_B3(trial)+ERPwindowPerBand{band}(2);
-        ERP_BH_0=ECoG_B1_Filtered(idx_BH_B1,:)+ECoG_B2_Filtered(idx_BH_B2,:)+ECoG_B3_Filtered(idx_BH_B3,:);
-        ERP_BHAll_0=ERP_BHAll_0+ERP_BH_0;
-        
-        idx_SR_B1=index_StartReaching_B1(trial+5)-ERPwindowPerBand{band}(1):index_StartReaching_B1(trial+5)+ERPwindowPerBand{band}(2);
-        idx_SR_B2=index_StartReaching_B2(trial+6)-ERPwindowPerBand{band}(1):index_StartReaching_B2(trial+6)+ERPwindowPerBand{band}(2);
-        idx_SR_B3=index_StartReaching_B3(trial+6)-ERPwindowPerBand{band}(1):index_StartReaching_B3(trial+6)+ERPwindowPerBand{band}(2);
-        ERP_SR_90=ECoG_B1_Filtered(idx_SR_B1,:)+ECoG_B2_Filtered(idx_SR_B2,:)+ECoG_B3_Filtered(idx_SR_B3,:);
-        ERP_SRAll_90=ERP_SRAll_90+ERP_SR_90;
-        
-        idx_BH_B1=index_BackingHome_B1(trial+5)-ERPwindowPerBand{band}(1):index_BackingHome_B1(trial+5)+ERPwindowPerBand{band}(2);
-        idx_BH_B2=index_BackingHome_B2(trial+6)-ERPwindowPerBand{band}(1):index_BackingHome_B2(trial+6)+ERPwindowPerBand{band}(2);
-        idx_BH_B3=index_BackingHome_B3(trial+6)-ERPwindowPerBand{band}(1):index_BackingHome_B3(trial+6)+ERPwindowPerBand{band}(2);
-        ERP_BH_90=ECoG_B1_Filtered(idx_BH_B1,:)+ECoG_B2_Filtered(idx_BH_B2,:)+ECoG_B3_Filtered(idx_BH_B3,:);
-        ERP_BHAll_90=ERP_BHAll_90+ERP_BH_90;
-        
-        idx_SR_B2=index_StartReaching_B2(trial+3)-ERPwindowPerBand{band}(1):index_StartReaching_B2(trial+3)+ERPwindowPerBand{band}(2);
-        idx_SR_B3=index_StartReaching_B3(trial+3)-ERPwindowPerBand{band}(1):index_StartReaching_B3(trial+3)+ERPwindowPerBand{band}(2);
-        ERP_SR_45=ECoG_B2_Filtered(idx_SR_B2,:)+ECoG_B3_Filtered(idx_SR_B3,:);
-        ERP_SRAll_45=ERP_SRAll_45+ERP_SR_45;
-        
-        idx_BH_B2=index_BackingHome_B2(trial+3)-ERPwindowPerBand{band}(1):index_BackingHome_B2(trial+3)+ERPwindowPerBand{band}(2);
-        idx_BH_B3=index_BackingHome_B3(trial+3)-ERPwindowPerBand{band}(1):index_BackingHome_B3(trial+3)+ERPwindowPerBand{band}(2);
-        ERP_BH_45=ECoG_B2_Filtered(idx_BH_B2,:)+ECoG_B3_Filtered(idx_BH_B3,:);
-        ERP_BHAll_45=ERP_BHAll_45+ERP_BH_45;
+    for i=1:2
+        %block 2
+        B1(i).E45=ECoG_B1_Filtered(index_E_B1(i+3)-ERPwindowPerBand{band}(1):index_E_B1(i+3)+ERPwindowPerBand{band}(2),:);
+        B1(i).F45=ECoG_B1_Filtered(index_F_B1(i+3)-ERPwindowPerBand{band}(1):index_F_B1(i+3)+ERPwindowPerBand{band}(2),:);
         
     end
     
-    for trial=1:2
+    % inter-block corr for each channel for only extension mode at 0 degree
+    
+    % block 1 /2 /3
+    for i=1:128
+        interB_B1_E0(i)=(corr(B1(1).E0(:,i),B1(2).E0(:,i))+corr(B1(1).E0(:,i),B1(3).E0(:,i))+corr(B1(2).E0(:,i),B1(3).E0(:,i)))/3;
+        interB_B2_E0(i)=(corr(B2(1).E0(:,i),B2(2).E0(:,i))+corr(B2(1).E0(:,i),B2(3).E0(:,i))+corr(B2(2).E0(:,i),B2(3).E0(:,i)))/3;
+        interB_B3_E0(i)=(corr(B3(1).E0(:,i),B3(2).E0(:,i))+corr(B3(1).E0(:,i),B3(3).E0(:,i))+corr(B3(2).E0(:,i),B3(3).E0(:,i)))/3;
+    end
+    
+    % intra-block corr for each channel for only extension mode at 0 degree
+    for i=1:128
         
-        idx_SR_B1=index_StartReaching_B1(trial+3)-ERPwindowPerBand{band}(1):index_StartReaching_B1(trial+3)+ERPwindowPerBand{band}(2);
-        ERP_SRAll_45=ERP_SRAll_45+ECoG_B1_Filtered(idx_SR_B1,:);
+        intraBAll=0;
+        for j=1:3
+            for jj=1:3
+                intraB=(corr(B1(j).E0(:,i),B2(jj).E0(:,i))+corr(B1(j).E0(:,i),B3(jj).E0(:,i))+corr(B2(j).E0(:,i),B3(jj).E0(:,i)))/3;
+                intraBAll=intraBAll+intraB;
+                
+            end
+            
+        end
+        intraB_E0(i)=intraBAll/9;
+    end
+    
+    figure;
+    set(gcf, 'Position', [100, 100, 2400, 600]);
+    suptitle(['Correlation for each channel; ',bandname{band},' band'])
+    subplot(4,1,1)
+    clims = [aclim bclim];
+    imagesc(interB_B1_E0,clims)
+    colorbar
+    title('interB-B1-E0');
+    
+    subplot(4,1,2)
+    clims = [aclim bclim];
+    imagesc(interB_B2_E0,clims)
+    colorbar
+    title('interB-B2-E0');
+    
+    subplot(4,1,3)
+    clims = [aclim bclim];
+    imagesc(interB_B3_E0,clims)
+    colorbar
+    title('interB-B3-E0');
+    
+    subplot(4,1,4)
+    clims = [aclim bclim];
+    imagesc(intraB_E0,clims)
+    colorbar
+    title('intraB-E0');
+    
+   
+    figure;
+    set(gcf, 'Position', [100, 100, 2400, 1200]);
+    suptitle(['Correlation for each channel; ',bandname{band},' band'])
+    interB_B1_E0_1=reshape(interB_B1_E0,16,8);
+    interB_B1_E0_1=interB_B1_E0_1';
+    clims = [aclim bclim];
+    subplot(2,2,1)
+    imagesc(interB_B1_E0_1,clims)
+    colorbar
+    title('interB-B1-E0');
+    interB_B2_E0_1=reshape(interB_B2_E0,16,8);
+    interB_B2_E0_1=interB_B2_E0_1';
+    clims = [aclim bclim];
+    subplot(2,2,2)
+    imagesc(interB_B2_E0_1,clims)
+    colorbar
+    title('interB-B2-E0');
+    interB_B3_E0_1=reshape(interB_B3_E0,16,8);
+    interB_B3_E0_1=interB_B3_E0_1';
+    clims = [aclim bclim];
+    subplot(2,2,3)
+    imagesc(interB_B3_E0_1,clims)
+    colorbar
+    title('interB-B3-E0');
+    intraB_E0_1=reshape(intraB_E0,16,8);
+    intraB_E0_1=intraB_E0_1';
+    clims = [aclim bclim];
+    subplot(2,2,4)
+    imagesc(intraB_E0_1,clims)
+    colorbar
+    title('intraB-E0');
+    
+    
+    
+    % inter-block corr for each channel for only flexion mode at 0 degree
+    % block 1 /2 /3
+    for i=1:128
+        interB_B1_F0(i)=(corr(B1(1).F0(:,i),B1(2).F0(:,i))+corr(B1(1).F0(:,i),B1(3).F0(:,i))+corr(B1(2).F0(:,i),B1(3).F0(:,i)))/3;
+        interB_B2_F0(i)=(corr(B2(1).F0(:,i),B2(2).F0(:,i))+corr(B2(1).F0(:,i),B2(3).F0(:,i))+corr(B2(2).F0(:,i),B2(3).F0(:,i)))/3;
+        interB_B3_F0(i)=(corr(B3(1).F0(:,i),B3(2).F0(:,i))+corr(B3(1).F0(:,i),B3(3).F0(:,i))+corr(B3(2).F0(:,i),B3(3).F0(:,i)))/3;
+    end
+    
+    
+    % intra-block corr for each channel for only flexion mode at 0 degree
+    for i=1:128
         
-        idx_BH_B1=index_BackingHome_B1(trial+3)-ERPwindowPerBand{band}(1):index_BackingHome_B1(trial+3)+ERPwindowPerBand{band}(2);
-        ERP_BHAll_45=ERP_BHAll_45+ECoG_B1_Filtered(idx_BH_B1,:);
+        intraBAll=0;
+        for j=1:3
+            for jj=1:3
+                intraB=(corr(B1(j).F0(:,i),B2(jj).F0(:,i))+corr(B1(j).F0(:,i),B3(jj).F0(:,i))+corr(B2(j).F0(:,i),B3(jj).F0(:,i)))/3;
+                intraBAll=intraBAll+intraB;
+                
+            end
+            
+        end
+        intraB_F0(i)=intraBAll/9;
+    end
+   
+    figure;
+    set(gcf, 'Position', [100, 100, 2400, 600]);
+    suptitle(['Correlation for each channel; ',bandname{band},' band'])
+    subplot(4,1,1)
+    clims = [aclim bclim];
+    imagesc(interB_B1_F0,clims)
+    colorbar
+    title('interB-B1-F0');
+    
+    subplot(4,1,2)
+    clims = [aclim bclim];
+    imagesc(interB_B2_F0,clims)
+    colorbar
+    title('interB-B2-F0');
+    
+    subplot(4,1,3)
+    clims = [aclim bclim];
+    imagesc(interB_B3_F0,clims)
+    colorbar
+    title('interB-B3-F0');
+    
+    subplot(4,1,4)
+    clims = [aclim bclim];
+    imagesc(intraB_F0,clims)
+    colorbar
+    title('intraB-F0');
+    
+    figure;
+    set(gcf, 'Position', [100, 100, 2400, 1200]);
+    suptitle(['Correlation for each channel; ',bandname{band},' band'])
+    interB_B1_F0_1=reshape(interB_B1_F0,16,8);
+    interB_B1_F0_1=interB_B1_F0_1';
+    clims = [aclim bclim];
+    subplot(2,2,1)
+    imagesc(interB_B1_F0_1,clims)
+    colorbar
+    title('interB-B1-F0');
+    interB_B2_F0_1=reshape(interB_B2_F0,16,8);
+    interB_B2_F0_1=interB_B2_F0_1';
+    clims = [aclim bclim];
+    subplot(2,2,2)
+    imagesc(interB_B2_F0_1,clims)
+    colorbar
+    title('interB-B2-F0');
+    interB_B3_F0_1=reshape(interB_B3_F0,16,8);
+    interB_B3_F0_1=interB_B3_F0_1';
+    clims = [aclim bclim];
+    subplot(2,2,3)
+    imagesc(interB_B3_F0_1,clims)
+    colorbar
+    title('interB-B3-F0');
+    intraB_F0_1=reshape(intraB_F0,16,8);
+    intraB_F0_1=intraB_F0_1';
+    clims = [aclim bclim];
+    subplot(2,2,4)
+    imagesc(intraB_F0_1,clims)
+    colorbar
+    title('intraB-F0');
+    
+
+    % inter-block corr for each channel for only extension mode at 45 degree
+    
+    % block 1 /2 /3
+    for i=1:128
+        interB_B1_E45(i)=corr(B1(1).E45(:,i),B1(2).E45(:,i));
+        interB_B2_E45(i)=(corr(B2(1).E45(:,i),B2(2).E45(:,i))+corr(B2(1).E45(:,i),B2(3).E45(:,i))+corr(B2(2).E45(:,i),B2(3).E45(:,i)))/3;
+        interB_B3_E45(i)=(corr(B3(1).E45(:,i),B3(2).E45(:,i))+corr(B3(1).E45(:,i),B3(3).E45(:,i))+corr(B3(2).E45(:,i),B3(3).E45(:,i)))/3;
+    end
+    
+    % intra-block corr for each channel for only extension mode at 45 degree
+    for i=1:128
         
-    end
-    
-    ERP_SRAll_0= ERP_SRAll_0/9;
-    ERP_BHAll_0= ERP_BHAll_0/9;
-    ERP_SRAll_90= ERP_SRAll_90/9;
-    ERP_BHAll_90= ERP_BHAll_90/9;
-    ERP_SRAll_45= ERP_SRAll_45/8;
-    ERP_BHAll_45= ERP_BHAll_45/8;
-    
-    % for 0 degree
-    figure;
-    set(gcf, 'Position', [100, 100, 2400, 1200]);
-    suptitle(['ERPs for all blocks & 0 degree & Start-Reaching; ',bandname{band},' band'])
-    for i=1:128
-        subplot(8,16,i)
-        plot(ERP_SRAll_0(:,ch_layout(i)))
-        xlim([0 ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)]);
-        vline(ERPwindowPerBand{band}(1));
-        xticks([1 ERPwindowPerBand{band}(1) ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)]);
-        xticklabels({num2str(-ERPwindowPerBand{band}(1)),num2str(0),num2str(ERPwindowPerBand{band}(2))});
-        title(['Ch',num2str(ch_layout(i))]);
-    end
-    % Producing high quality iamge and save it
-    %HighQualityFigs(['ERPsForAllBlocks_0Degree_SR_',bandname{band}])
-    
-    figure;
-    set(gcf, 'Position', [100, 100, 2400, 1200]);
-    suptitle(['ERPs for all blocks & 0 degree & Backing-Home; ',bandname{band},' band'])
-    for i=1:128
-        subplot(8,16,i)
-        plot(ERP_BHAll_0(:,ch_layout(i)))
-        xlim([0 ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)]);
-        vline(ERPwindowPerBand{band}(1));
-        xticks([1 ERPwindowPerBand{band}(1) ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)]);
-        xticklabels({num2str(-ERPwindowPerBand{band}(1)),num2str(0),num2str(ERPwindowPerBand{band}(2))});
-        title(['Ch',num2str(ch_layout(i))]);
-    end
-    % Producing high quality iamge and save it
-    %HighQualityFigs(['ERPsForAllBlocks_0Degree_BH_',bandname{band}])
-    
-    figure;
-    set(gcf, 'Position', [100, 100, 2400, 1200]);
-    suptitle(['ERPs for all blocks & 90 degree & Start-Reaching+Backing-Home; ',bandname{band},' band'])
-    for i=1:128
-        subplot(8,16,i)
-        plot((ERP_SRAll_0(:,ch_layout(i))+ERP_BHAll_0(:,ch_layout(i)))/2)
-        xlim([0 ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)]);
-        vline(ERPwindowPerBand{band}(1));
-        xticks([1 ERPwindowPerBand{band}(1) ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)]);
-        xticklabels({num2str(-ERPwindowPerBand{band}(1)),num2str(0),num2str(ERPwindowPerBand{band}(2))});
-        title(['Ch',num2str(ch_layout(i))]);
-    end
-    % Producing high quality iamge and save it
-    %HighQualityFigs(['ERPsForAllBlocks_0Degree_SR&BH_',bandname{band}])
-    
-    % for 45 degree
-    figure;
-    set(gcf, 'Position', [100, 100, 2400, 1200]);
-    suptitle(['ERPs for all blocks & 45 degree & Start-Reaching; ',bandname{band},' band'])
-    for i=1:128
-        subplot(8,16,i)
-        plot(ERP_SRAll_45(:,ch_layout(i)))
-        xlim([0 ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)]);
-        vline(ERPwindowPerBand{band}(1));
-        xticks([1 ERPwindowPerBand{band}(1) ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)]);
-        xticklabels({num2str(-ERPwindowPerBand{band}(1)),num2str(0),num2str(ERPwindowPerBand{band}(2))});
-        title(['Ch',num2str(ch_layout(i))]);
-    end
-    % Producing high quality iamge and save it
-    %HighQualityFigs(['ERPsForAllBlocks_45Degree_SR_',bandname{band}])
-    
-    figure;
-    set(gcf, 'Position', [100, 100, 2400, 1200]);
-    suptitle(['ERPs for all blocks & 45 degree & Backing-Home; ',bandname{band},' band'])
-    for i=1:128
-        subplot(8,16,i)
-        plot(ERP_BHAll_45(:,ch_layout(i)))
-        xlim([0 ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)]);
-        vline(ERPwindowPerBand{band}(1));
-        xticks([1 ERPwindowPerBand{band}(1) ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)]);
-        xticklabels({num2str(-ERPwindowPerBand{band}(1)),num2str(0),num2str(ERPwindowPerBand{band}(2))});
-        title(['Ch',num2str(ch_layout(i))]);
-    end
-    % Producing high quality iamge and save it
-    %HighQualityFigs(['ERPsForAllBlocks_45Degree_BH_',bandname{band}])
-    
-    figure;
-    set(gcf, 'Position', [100, 100, 2400, 1200]);
-    suptitle(['ERPs for all blocks & 45 degree & Start-Reaching+Backing-Home; ',bandname{band},' band'])
-    for i=1:128
-        subplot(8,16,i)
-        plot((ERP_SRAll_45(:,ch_layout(i))+ERP_BHAll_45(:,ch_layout(i)))/2)
-        xlim([0 ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)]);
-        vline(ERPwindowPerBand{band}(1));
-        xticks([1 ERPwindowPerBand{band}(1) ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)]);
-        xticklabels({num2str(-ERPwindowPerBand{band}(1)),num2str(0),num2str(ERPwindowPerBand{band}(2))});
-        title(['Ch',num2str(ch_layout(i))]);
-    end
-    % Producing high quality iamge and save it
-    %HighQualityFigs(['ERPsForAllBlocks_45Degree_SR&BH_',bandname{band}])
-    
-    % for 90 degree
-    figure;
-    set(gcf, 'Position', [100, 100, 2400, 1200]);
-    suptitle(['ERPs for all blocks & 0 degree & Start-Reaching; ',bandname{band},' band'])
-    for i=1:128
-        subplot(8,16,i)
-        plot(ERP_SRAll_90(:,ch_layout(i)))
-        xlim([0 ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)]);
-        vline(ERPwindowPerBand{band}(1));
-        xticks([1 ERPwindowPerBand{band}(1) ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)]);
-        xticklabels({num2str(-ERPwindowPerBand{band}(1)),num2str(0),num2str(ERPwindowPerBand{band}(2))});
-        title(['Ch',num2str(ch_layout(i))]);
-    end
-    % Producing high quality iamge and save it
-    %HighQualityFigs(['ERPsForAllBlocks_90Degree_SR_',bandname{band}])
-    
-    figure;
-    set(gcf, 'Position', [100, 100, 2400, 1200]);
-    suptitle(['ERPs for all blocks & 0 degree & Backing-Home; ',bandname{band},' band'])
-    for i=1:128
-        subplot(8,16,i)
-        plot(ERP_BHAll_90(:,ch_layout(i)))
-        xlim([0 ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)]);
-        vline(ERPwindowPerBand{band}(1));
-        xticks([1 ERPwindowPerBand{band}(1) ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)]);
-        xticklabels({num2str(-ERPwindowPerBand{band}(1)),num2str(0),num2str(ERPwindowPerBand{band}(2))});
-        title(['Ch',num2str(ch_layout(i))]);
-    end
-    % Producing high quality iamge and save it
-    %HighQualityFigs(['ERPsForAllBlocks_90Degree_BH_',bandname{band}])
-    
-    figure;
-    set(gcf, 'Position', [100, 100, 2400, 1200]);
-    suptitle(['ERPs for all blocks & 0 degree & Start-Reaching+Backing-Home; ',bandname{band},' band'])
-    for i=1:128
-        subplot(8,16,i)
-        plot((ERP_SRAll_90(:,ch_layout(i))+ERP_BHAll_0(:,ch_layout(i)))/2)
-        xlim([0 ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)]);
-        vline(ERPwindowPerBand{band}(1));
-        xticks([1 ERPwindowPerBand{band}(1) ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)]);
-        xticklabels({num2str(-ERPwindowPerBand{band}(1)),num2str(0),num2str(ERPwindowPerBand{band}(2))});
-        title(['Ch',num2str(ch_layout(i))]);
-    end
-    % Producing high quality iamge and save it
-    %HighQualityFigs(['ERPsForAllBlocks_90Degree_SR&BH_',bandname{band}])
-    
-    
-    % for all angles 
-    figure;
-    set(gcf, 'Position', [100, 100, 2400, 1200]);
-    suptitle(['ERPs for all blocks for all angles & Start-Reaching; ',bandname{band},' band'])
-    for i=1:128
-        subplot(8,16,i)
-        plot((ERP_SRAll_0(:,ch_layout(i))+ERP_SRAll_45(:,ch_layout(i))+ERP_SRAll_90(:,ch_layout(i)))/3)
-        xlim([0 ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)]);
-        vline(ERPwindowPerBand{band}(1));
-        xticks([1 ERPwindowPerBand{band}(1) ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)]);
-        xticklabels({num2str(-ERPwindowPerBand{band}(1)),num2str(0),num2str(ERPwindowPerBand{band}(2))});
-        title(['Ch',num2str(ch_layout(i))]);
+        intraBAll=0;
+        for j=1:2
+            for jj=1:3
+                intraB=(corr(B1(j).E45(:,i),B2(jj).E45(:,i))+corr(B1(j).E45(:,i),B3(jj).E45(:,i)))/2;
+                intraBAll=intraBAll+intraB;
+                
+            end
+            
+        end
         
+        for j=1:3
+            for jj=1:3
+                intraB=corr(B2(j).E45(:,i),B3(jj).E45(:,i));
+                intraBAll=intraBAll+intraB;
+                
+            end
+            
+        end
+        intraB_E45(i)=intraBAll/8;
     end
-    % Producing high quality iamge and save it
-    %HighQualityFigs(['ERPsForAllBlocks&Angles_SR_',bandname{band}])
+    
+    
+    figure;
+    set(gcf, 'Position', [100, 100, 2400, 600]);
+    suptitle(['Correlation for each channel; ',bandname{band},' band'])
+    subplot(4,1,1)
+    clims = [aclim bclim];
+    imagesc(interB_B1_E45,clims)
+    colorbar
+    title('interB-B1-E45');
+    
+    subplot(4,1,2)
+    clims = [aclim bclim];
+    imagesc(interB_B2_E45,clims)
+    colorbar
+    title('interB-B2-E45');
+    
+    subplot(4,1,3)
+    clims = [aclim bclim];
+    imagesc(interB_B3_E45,clims)
+    colorbar
+    title('interB-B3-E45');
+    
+    subplot(4,1,4)
+    clims = [aclim bclim];
+    imagesc(intraB_E45,clims)
+    colorbar
+    title('intraB-E45');
     
     figure;
     set(gcf, 'Position', [100, 100, 2400, 1200]);
-    suptitle(['ERPs for all blocks for all angles & Backing-Home; ',bandname{band},' band'])
+    suptitle(['Correlation for each channel; ',bandname{band},' band'])
+    interB_B1_E45_1=reshape(interB_B1_E45,16,8);
+    interB_B1_E45_1=interB_B1_E45_1';
+    clims = [aclim bclim];
+    subplot(2,2,1)
+    imagesc(interB_B1_E45_1,clims)
+    colorbar
+    title('interB-B1-E45');
+    interB_B2_E45_1=reshape(interB_B2_E45,16,8);
+    interB_B2_E45_1=interB_B2_E45_1';
+    clims = [aclim bclim];
+    subplot(2,2,2)
+    imagesc(interB_B2_E45_1,clims)
+    colorbar
+    title('interB-B2-E45');
+    interB_B3_E45_1=reshape(interB_B3_E45,16,8);
+    interB_B3_E45_1=interB_B3_E45_1';
+    clims = [aclim bclim];
+    subplot(2,2,3)
+    imagesc(interB_B3_E45_1,clims)
+    colorbar
+    title('interB-B3-E45');
+    intraB_E45_1=reshape(intraB_E45,16,8);
+    intraB_E45_1=intraB_E45_1';
+    clims = [aclim bclim];
+    subplot(2,2,4)
+    imagesc(intraB_E45_1,clims)
+    colorbar
+    title('intraB-E45');
+    
+    
+    
+    % inter-block corr for each channel for only flexion mode at 45 degree
+    % block 1 /2 /3
     for i=1:128
-        subplot(8,16,i)
-        plot((ERP_BHAll_0(:,ch_layout(i))+ERP_BHAll_45(:,ch_layout(i))+ERP_BHAll_90(:,ch_layout(i)))/3)
-        xlim([0 ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)]);
-        vline(ERPwindowPerBand{band}(1));
-        xticks([1 ERPwindowPerBand{band}(1) ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)]);
-        xticklabels({num2str(-ERPwindowPerBand{band}(1)),num2str(0),num2str(ERPwindowPerBand{band}(2))});
-        title(['Ch',num2str(ch_layout(i))]);
-        
+        interB_B1_F45(i)=corr(B1(1).F45(:,i),B1(2).F45(:,i));
+        interB_B2_F45(i)=(corr(B2(1).F45(:,i),B2(2).F45(:,i))+corr(B2(1).F45(:,i),B2(3).F45(:,i))+corr(B2(2).F45(:,i),B2(3).F45(:,i)))/3;
+        interB_B3_F45(i)=(corr(B3(1).F45(:,i),B3(2).F45(:,i))+corr(B3(1).F45(:,i),B3(3).F45(:,i))+corr(B3(2).F45(:,i),B3(3).F45(:,i)))/3;
     end
-    % Producing high quality iamge and save it
-    %HighQualityFigs(['ERPsForAllBlocks&Angles_BH_',bandname{band}])
+    
+    
+    % intra-block corr for each channel for only flexion mode at 45 degree
+    for i=1:128
+        
+        intraBAll=0;
+        for j=1:2
+            for jj=1:3
+                intraB=(corr(B1(j).F45(:,i),B2(jj).F45(:,i))+corr(B1(j).F45(:,i),B3(jj).F45(:,i)))/2;
+                intraBAll=intraBAll+intraB;
+                
+            end
+            
+        end
+        
+        for j=1:3
+            for jj=1:3
+                intraB=corr(B2(j).F45(:,i),B3(jj).F45(:,i));
+                intraBAll=intraBAll+intraB;
+                
+            end
+            
+        end
+        
+        intraB_F45(i)=intraBAll/8;
+    end
+    
+    figure;
+    set(gcf, 'Position', [100, 100, 2400, 600]);
+    suptitle(['Correlation for each channel; ',bandname{band},' band'])
+    subplot(4,1,1)
+    clims = [aclim bclim];
+    imagesc(interB_B1_F45,clims)
+    colorbar
+    title('interB-B1-F45');
+    
+    subplot(4,1,2)
+    clims = [aclim bclim];
+    imagesc(interB_B2_F45,clims)
+    colorbar
+    title('interB-B2-F45');
+    
+    subplot(4,1,3)
+    clims = [aclim bclim];
+    imagesc(interB_B3_F45,clims)
+    colorbar
+    title('interB-B3-F45');
+    
+    subplot(4,1,4)
+    clims = [aclim bclim];
+    imagesc(intraB_F45,clims)
+    colorbar
+    title('intraB-F45');
     
     figure;
     set(gcf, 'Position', [100, 100, 2400, 1200]);
-    suptitle(['ERPs for all blocks for all angles & Start-Reaching+Backing-Home; ',bandname{band},' band'])
+    suptitle(['Correlation for each channel; ',bandname{band},' band'])
+    interB_B1_F45_1=reshape(interB_B1_F45,16,8);
+    interB_B1_F45_1=interB_B1_F45_1';
+    clims = [aclim bclim];
+    subplot(2,2,1)
+    imagesc(interB_B1_F45_1,clims)
+    colorbar
+    title('interB-B1-F45');
+    interB_B2_F45_1=reshape(interB_B2_F45,16,8);
+    interB_B2_F45_1=interB_B2_F45_1';
+    clims = [aclim bclim];
+    subplot(2,2,2)
+    imagesc(interB_B2_F45_1,clims)
+    colorbar
+    title('interB-B2-F45');
+    interB_B3_F45_1=reshape(interB_B3_F45,16,8);
+    interB_B3_F45_1=interB_B3_F45_1';
+    clims = [aclim bclim];
+    subplot(2,2,3)
+    imagesc(interB_B3_F45_1,clims)
+    colorbar
+    title('interB-B3-F45');
+    intraB_F45_1=reshape(intraB_F45,16,8);
+    intraB_F45_1=intraB_F45_1';
+    clims = [aclim bclim];
+    subplot(2,2,4)
+    imagesc(intraB_F45_1,clims)
+    colorbar
+    title('intraB-F45');
+    
+    
+    % inter-block corr for each channel for only extension mode at 90 degree
+    
+    % block 1 /2 /3
     for i=1:128
-        subplot(8,16,i)
-        plot((ERP_SRAll_0(:,ch_layout(i))+ERP_BHAll_0(:,ch_layout(i))+...
-            ERP_SRAll_45(:,ch_layout(i))+ERP_BHAll_45(:,ch_layout(i))+...
-            ERP_SRAll_90(:,ch_layout(i))+ERP_BHAll_90(:,ch_layout(i)))/6)
-        xlim([0 ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)]);
-        vline(ERPwindowPerBand{band}(1));
-        xticks([1 ERPwindowPerBand{band}(1) ERPwindowPerBand{band}(1)+ERPwindowPerBand{band}(2)]);
-        xticklabels({num2str(-ERPwindowPerBand{band}(1)),num2str(0),num2str(ERPwindowPerBand{band}(2))});
-        title(['Ch',num2str(ch_layout(i))]);
-        
+        interB_B1_E90(i)=(corr(B1(1).E90(:,i),B1(2).E90(:,i))+corr(B1(1).E90(:,i),B1(3).E90(:,i))+corr(B1(2).E90(:,i),B1(3).E90(:,i)))/3;
+        interB_B2_E90(i)=(corr(B2(1).E90(:,i),B2(2).E90(:,i))+corr(B2(1).E90(:,i),B2(3).E90(:,i))+corr(B2(2).E90(:,i),B2(3).E90(:,i)))/3;
+        interB_B3_E90(i)=(corr(B3(1).E90(:,i),B3(2).E90(:,i))+corr(B3(1).E90(:,i),B3(3).E90(:,i))+corr(B3(2).E90(:,i),B3(3).E90(:,i)))/3;
     end
-    % Producing high quality iamge and save it
-    %HighQualityFigs(['ERPsForAllBlocks&Angles_SR&BH_',bandname{band}])
+    
+    % intra-block corr for each channel for only extension mode at 90 degree
+    for i=1:128
+        
+        intraBAll=0;
+        for j=1:3
+            for jj=1:3
+                intraB=(corr(B1(j).E90(:,i),B2(jj).E90(:,i))+corr(B1(j).E90(:,i),B3(jj).E90(:,i))+corr(B2(j).E90(:,i),B3(jj).E90(:,i)))/3;
+                intraBAll=intraBAll+intraB;
+                
+            end
+            
+        end
+        intraB_E90(i)=intraBAll/9;
+    end
+    
+    figure;
+    set(gcf, 'Position', [100, 100, 2400, 600]);
+    suptitle(['Correlation for each channel; ',bandname{band},' band'])
+    subplot(4,1,1)
+    clims = [aclim bclim];
+    imagesc(interB_B1_E90,clims)
+    colorbar
+    title('interB-B1-E90');
+    
+    subplot(4,1,2)
+    clims = [aclim bclim];
+    imagesc(interB_B2_E90,clims)
+    colorbar
+    title('interB-B2-E90');
+    
+    subplot(4,1,3)
+    clims = [aclim bclim];
+    imagesc(interB_B3_E90,clims)
+    colorbar
+    title('interB-B3-E90');
+    
+    subplot(4,1,4)
+    clims = [aclim bclim];
+    imagesc(intraB_E90,clims)
+    colorbar
+    title('intraB-E90');
+    
+   
+    figure;
+    set(gcf, 'Position', [100, 100, 2400, 1200]);
+    suptitle(['Correlation for each channel; ',bandname{band},' band'])
+    interB_B1_E90_1=reshape(interB_B1_E90,16,8);
+    interB_B1_E90_1=interB_B1_E90_1';
+    clims = [aclim bclim];
+    subplot(2,2,1)
+    imagesc(interB_B1_E90_1,clims)
+    colorbar
+    title('interB-B1-E90');
+    interB_B2_E90_1=reshape(interB_B2_E90,16,8);
+    interB_B2_E90_1=interB_B2_E90_1';
+    clims = [aclim bclim];
+    subplot(2,2,2)
+    imagesc(interB_B2_E90_1,clims)
+    colorbar
+    title('interB-B2-E90');
+    interB_B3_E90_1=reshape(interB_B3_E90,16,8);
+    interB_B3_E90_1=interB_B3_E90_1';
+    clims = [aclim bclim];
+    subplot(2,2,3)
+    imagesc(interB_B3_E90_1,clims)
+    colorbar
+    title('interB-B3-E90');
+    intraB_E90_1=reshape(intraB_E90,16,8);
+    intraB_E90_1=intraB_E90_1';
+    clims = [aclim bclim];
+    subplot(2,2,4)
+    imagesc(intraB_E90_1,clims)
+    colorbar
+    title('intraB-E90');
     
     
     
+    % inter-block corr for each channel for only flexion mode at 90 degree
+    % block 1 /2 /3
+    for i=1:128
+        interB_B1_F90(i)=(corr(B1(1).F90(:,i),B1(2).F90(:,i))+corr(B1(1).F90(:,i),B1(3).F90(:,i))+corr(B1(2).F90(:,i),B1(3).F90(:,i)))/3;
+        interB_B2_F90(i)=(corr(B2(1).F90(:,i),B2(2).F90(:,i))+corr(B2(1).F90(:,i),B2(3).F90(:,i))+corr(B2(2).F90(:,i),B2(3).F90(:,i)))/3;
+        interB_B3_F90(i)=(corr(B3(1).F90(:,i),B3(2).F90(:,i))+corr(B3(1).F90(:,i),B3(3).F90(:,i))+corr(B3(2).F90(:,i),B3(3).F90(:,i)))/3;
+    end
     
+    
+    % intra-block corr for each channel for only flexion mode at 0 degree
+    for i=1:128
+        
+        intraBAll=0;
+        for j=1:3
+            for jj=1:3
+                intraB=(corr(B1(j).F90(:,i),B2(jj).F90(:,i))+corr(B1(j).F90(:,i),B3(jj).F90(:,i))+corr(B2(j).F90(:,i),B3(jj).F90(:,i)))/3;
+                intraBAll=intraBAll+intraB;
+                
+            end
+            
+        end
+        intraB_F90(i)=intraBAll/9;
+    end
+   
+    figure;
+    set(gcf, 'Position', [100, 100, 2400, 600]);
+    suptitle(['Correlation for each channel; ',bandname{band},' band'])
+    subplot(4,1,1)
+    clims = [aclim bclim];
+    imagesc(interB_B1_F90,clims)
+    colorbar
+    title('interB-B1-F90');
+    
+    subplot(4,1,2)
+    clims = [aclim bclim];
+    imagesc(interB_B2_F90,clims)
+    colorbar
+    title('interB-B2-F90');
+    
+    subplot(4,1,3)
+    clims = [aclim bclim];
+    imagesc(interB_B3_F90,clims)
+    colorbar
+    title('interB-B3-F90');
+    
+    subplot(4,1,4)
+    clims = [aclim bclim];
+    imagesc(intraB_F90,clims)
+    colorbar
+    title('intraB-F90');
+    
+    figure;
+    set(gcf, 'Position', [100, 100, 2400, 1200]);
+    suptitle(['Correlation for each channel; ',bandname{band},' band'])
+    interB_B1_F90_1=reshape(interB_B1_F90,16,8);
+    interB_B1_F90_1=interB_B1_F90_1';
+    clims = [aclim bclim];
+    subplot(2,2,1)
+    imagesc(interB_B1_F90_1,clims)
+    colorbar
+    title('interB-B1-F90');
+    interB_B2_F90_1=reshape(interB_B2_F90,16,8);
+    interB_B2_F90_1=interB_B2_F90_1';
+    clims = [aclim bclim];
+    subplot(2,2,2)
+    imagesc(interB_B2_F90_1,clims)
+    colorbar
+    title('interB-B2-F90');
+    interB_B3_F90_1=reshape(interB_B3_F90,16,8);
+    interB_B3_F90_1=interB_B3_F90_1';
+    clims = [aclim bclim];
+    subplot(2,2,3)
+    imagesc(interB_B3_F90_1,clims)
+    colorbar
+    title('interB-B3-F90');
+    intraB_F90_1=reshape(intraB_F90,16,8);
+    intraB_F90_1=intraB_F90_1';
+    clims = [aclim bclim];
+    subplot(2,2,4)
+    imagesc(intraB_F90_1,clims)
+    colorbar
+    title('intraB-F90');
+    
+   %----------------------------------------------------------------------- 
+   % inter-block corr for each channel for extension&flexion modes at 0 degree
+   % intra-block corr for each channel for extension&flexion modes at 0 degree
+   
+   % inter-block corr for each channel for only extension mode at 45 degree
+   % intra-block corr for each channel for only extension mode at 45 degree
+   
+   % inter-block corr for each channel for only flexion mode at 45 degree
+   % intra-block corr for each channel for only flexion mode at 45 degree
+   
+   % inter-block corr for each channel for extension&flexion modes at 45 degree
+   % intra-block corr for each channel for extension&flexion modes at 45 degree
+   
+   % inter-block corr for each channel for only extension mode at 90 degree
+   % intra-block corr for each channel for only extension mode at 90 degree
+   
+   % inter-block corr for each channel for only flexion mode at 90 degree
+   % intra-block corr for each channel for only flexion mode at 90 degree
+   
+   % inter-block corr for each channel for extension&flexion modes at 90 degree
+   % intra-block corr for each channel for extension&flexion modes at 90 degree
+   
+   
+   % inter-block corr for each channel for only extension mode for all degree
+   % intra-block corr for each channel for only extension mode for all degree
+   
+   % inter-block corr for each channel for only flexion mode for all degree
+   % intra-block corr for each channel for only flexion mode for all degree
+   
+   % inter-block corr for each channel for extension&flexion modes for all degree
+   % intra-block corr for each channel for extension&flexion modes for all degree
 end
-
-
-
-
-
-
+ %%   
+ %%%%%  % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ 
 
 
