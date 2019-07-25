@@ -2,6 +2,11 @@
 clear all
 close all
 
+%%%%%%%%%%%%% this is a change for new version test on github
+%%%%%%
+%%%%
+%%%
+
 % loading all data from 3 blocks to plot ERPs for different bands...
 
 % First block; reaching a target point from home: 5cm. each trial: one forward & one backward
